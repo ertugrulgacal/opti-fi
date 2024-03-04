@@ -2,45 +2,50 @@ import os
 import open3d as o3d
 import numpy as np
 
-# Set the path to the main folder
-main_folder = "/Users/egkubo/Stanford3DISD/Stanford3dDataset_v1.2_Aligned_Version"
+main_folder_path = "/Users/egkubo/Stanford3DISD/Stanford3dDataset_v1.2_Aligned_Version"
+areas_to_read = ["Area_1", "Area_2"]
 
-# Function to combine point clouds from multiple text files in a folder
-def combine_point_clouds(folder_path):
-    combined_data = np.empty((0, 6))  # Assuming 6 columns (X, Y, Z, R, G, B)
+def read_room(room_path):
+    combined_data = np.empty((0, 6))  # (X, Y, Z, R, G, B)
 
-    # Loop through files in the folder
-    for filename in os.listdir(folder_path):
+    for filename in os.listdir(room_path):
         if filename.endswith(".txt"):
-            file_path = os.path.join(folder_path, filename)
-            data = np.loadtxt(file_path)
-            combined_data = np.concatenate((combined_data, data), axis=0)
+            txt_file_path = os.path.join(room_path, filename)
+            
+            data = np.loadtxt(txt_file_path)  # Read txt
+            combined_data = np.concatenate((combined_data, data), axis=0)  # Combine txt files
 
     return combined_data
 
-# Initialize an empty array to store the combined point cloud data
-all_data = np.empty((0, 6))
+def read_areas(main_folder, area_names):
+    all_data = np.empty((0, 6))  # (X, Y, Z, R, G, B)
 
-# Combine point clouds for all rooms in "Area_1"
-area_path = os.path.join(main_folder, "Area_1")
+    for area_name in area_names:
+        area_path = os.path.join(main_folder, area_name)
+        
+        if os.path.isdir(area_path):  # Check if area folder is a directory
+            for room_folder in os.listdir(area_path):
+                room_path = os.path.join(area_path, room_folder)
 
-# Check if "Area_1" is a directory
-if os.path.isdir(area_path):
-    for room_folder in os.listdir(area_path):
-        room_path = os.path.join(area_path, room_folder)
+                if os.path.isdir(room_path):  # Check if room folder is a directory
+                    combined_data = read_room(room_path)
+                    all_data = np.concatenate((all_data, combined_data), axis=0)  # Combine point cloud data returned from the read_room function
 
-        # Check if the room folder is a directory
-        if os.path.isdir(room_path):
-            # Combine point clouds
-            combined_data = combine_point_clouds(room_path)
-            all_data = np.concatenate((all_data, combined_data), axis=0)
+    return all_data
 
-# Extract point cloud coordinates from the combined data
-points = all_data[:, :3]
+def create_point_cloud_data(main_folder, area_names):
+    combined_data = read_areas(main_folder, area_names)
 
-# Create Open3D point cloud
-pcd = o3d.geometry.PointCloud()
-pcd.points = o3d.utility.Vector3dVector(points)
+    # Get first 3 indices which are (X, Y, Z)
+    points = combined_data[:, :3]
 
-# Visualize the combined point cloud
+    # Define a point cloud object and fill it with data we have read
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points)
+
+    return pcd
+
+pcd = create_point_cloud_data(main_folder_path, areas_to_read)
+
+# Visualization
 o3d.visualization.draw_geometries([pcd])

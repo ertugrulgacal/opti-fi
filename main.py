@@ -43,9 +43,13 @@ def create_point_cloud_data(main_folder, area_names):
     # Get first 3 indices which are (X, Y, Z)
     points = combined_data[:, :3]
 
+    # Get last 3 indices which are (R, G, B)
+    colors = combined_data[:, 3:]
+
     # Define a point cloud object and fill it with data we have read
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points)
+    pcd.colors = o3d.utility.Vector3dVector(colors / 255.0)  # Normalize color values to [0, 1]
 
     return pcd
 

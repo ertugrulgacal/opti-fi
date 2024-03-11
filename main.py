@@ -1,5 +1,17 @@
 import open3d as o3d
 import numpy as np
+import matplotlib.pyplot as plt
+
+file_path = "teknofest_ornek_data_v1/ornek_ev_1_lidar_export.xyz"
+
+def replace_values(data):
+    new_data = []
+
+    for point in data:
+        if point[2] > 0.5:
+            new_data.append(point)
+
+    return new_data
 
 def read_single_file(file_path):
     try:
@@ -12,22 +24,20 @@ def read_single_file(file_path):
 def create_point_cloud_from_file(file_path):
     data = read_single_file(file_path)
 
-    # Get first 3 indices which are (X, Y, Z)
-    points = data[:, :3]
+    points = data[:, :3]  # X, Y, Z
 
-    # Get last 3 indices which are (R, G, B)
-    colors = data[:, 3:]
+    #colors = data[:, 3:]  # R, G, B
 
-    # Define a point cloud object and fill it with data we have read
+    wall_points = replace_values(points)
+
     pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(points)
-    pcd.colors = o3d.utility.Vector3dVector(colors / 255.0)  # Normalize color values to [0, 1]
+    pcd.points = o3d.utility.Vector3dVector(wall_points)
+    #pcd.colors = o3d.utility.Vector3dVector(colors / 255.0)  # Normalize color values to [0, 1]
 
     return pcd
 
-# Example usage
-single_file_path = "teknofest_ornek_data_v1/ornek_ev_1_lidar_export.xyz"
-pcd_single = create_point_cloud_from_file(single_file_path)
+
+pcd = create_point_cloud_from_file(file_path)
 
 # Visualization
-o3d.visualization.draw_geometries([pcd_single])
+o3d.visualization.draw_geometries([pcd])
